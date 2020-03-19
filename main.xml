@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>
+
+<glsl_hacker>
+	
+  <window name="win3d01" title="Textured 3D Box" width="800" height="500"
+          gl_version_major="2" gl_version_minor="1" />
+  
+ 
+  
+  
+	<script name="init_scene" run_mode="INIT" 
+        filename="init.lua"
+        livecoding_from_file="1" 
+        livecoding_from_file_update_delay="0.2"/>
+  
+<script name="update_scene" run_mode="FRAME" 
+        filename="frame.lua" 
+        livecoding_from_file="1" 
+        livecoding_from_file_update_delay="0.2"/>
+	
+
+	<script name="resize_scene" run_mode="SIZE" >
+		<raw_data><![CDATA[	
+
+winW, winH = gh_window.getsize(0)
+
+mx, my = gh_input.mouse_get_position()
+
+
+
+-- This is how we resize a perspective camera.
+--
+local aspect = 1.333
+if (winH > 0) then
+  aspect = winW / winH
+end  
+gh_camera.update_persp(camera, 60, aspect, 1.0, 100.0)
+gh_camera.set_viewport(camera, 0, 0, winW, winH)
+
+
+
+
+
+gh_utils.font_set_viewport_info(font, 0, 0, winW, winH)
+
+		]]></raw_data>
+	</script> 
+
+
+
+
+
+<!--
+	A simple texturing GPU programs.
+-->	
+  <gpu_program name="tex_prog" >
+    <raw_data_vs><![CDATA[	 
+ 
+#version 120
+
+uniform float radii = 5;
+varying vec4 v_uv;
+
+void main()
+{
+  vec4 point =vec4( radii * normalize(gl_Vertex.xyz), gl_Vertex.w); 
+  gl_Position = normalize(gl_ModelViewProjectionMatrix * point);  
+  v_uv = gl_MultiTexCoord0;
+}
+  
+  ]]></raw_data_vs>
+    <raw_data_ps><![CDATA[	 
+#version 120
+uniform sampler2D tex0;
+varying vec4 v_uv;
+void main (void)
+{
+  vec2 uv = v_uv.xy;
+  uv.y *= -1.0;
+  gl_FragColor = texture2D(tex0, uv);
+}
+    ]]></raw_data_ps>
+  </gpu_program>
+  
+
+
+<!--
+	One of the most simple GPU programs.
+	gl_Color is the color of a vertex.
+-->	
+  <gpu_program name="vertex_color_prog" >
+    <raw_data_vs><![CDATA[	 
+#version 120
+varying vec4 v_color;
+void main()
+{
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;		
+	v_color = gl_Color;
+}
+  ]]></raw_data_vs>
+    <raw_data_ps><![CDATA[	 
+#version 120
+varying vec4 v_color;
+void main (void)
+{
+  gl_FragColor = v_color;
+}
+    ]]></raw_data_ps>
+  </gpu_program>
+  
+
+
+
+
+
+
+
+  
+  
+</glsl_hacker>
