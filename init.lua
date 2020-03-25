@@ -19,9 +19,11 @@ local aspect = 1.0
 if (winH > 0) then
   aspect = winW / winH
 end  
+
+world_position = {x = 5, y=30, z=50}
 camera = gh_camera.create_persp(60, aspect, 1.0, 100.0)
 gh_camera.set_viewport(camera, 0, 0, winW, winH)
-gh_camera.set_position(camera, 5, 30, 50)
+gh_camera.set_position(camera, world_position.x, world_position.y, world_position.z)
 gh_camera.set_lookat(camera, 0, 0, 0, 1)
 gh_camera.setupvec(camera, 0, 1, 0, 0)
 
@@ -81,19 +83,21 @@ function create_axes()
   local LINE_RENDER_STRIP = 1 
   local LINE_RENDER_LOOP = 2
 
-  num_lines = 10000
-  num_vertices = 6
+  --num_lines = 10000
+  num_vertices = 2
 
   axes = gh_polyline.create_v2(num_vertices, LINE_RENDER_DEFAULT)
   -- x
-  gh_polyline.set_vertex_position(axes, 0, -1, 0, 0, 1)
-  gh_polyline.set_vertex_position(axes, 1,  1, 0, 0, 1)
+  --gh_polyline.set_vertex_position(axes, 0, -1, 0, 0, 1)
+  --gh_polyline.set_vertex_position(axes, 1,  1, 0, 0, 1)
   -- y
-  gh_polyline.set_vertex_position(axes, 2, -1, 0, 0, 1)
-  gh_polyline.set_vertex_position(axes, 3,  1, 0, 0, 1)
+  gh_polyline.set_vertex_position(axes, 0, 0, -1, 0, 1)
+  gh_polyline.set_vertex_position(axes, 1, 0, 1, 0, 1)
+  gh_polyline.set_vertex_color(axes, 0, 0, 1, 0, 1)
+  gh_polyline.set_vertex_color(axes, 1, 0, 1, 0, 1)
   -- z
-  gh_polyline.set_vertex_position(axes, 4, 0, 0, -1, 1)
-  gh_polyline.set_vertex_position(axes, 5, 0, 0,  1, 1)
+  --gh_polyline.set_vertex_position(axes, 4, 0, 0, -1, 1)
+  --gh_polyline.set_vertex_position(axes, 5, 0, 0,  1, 1)
 
   return axes
 end
@@ -168,3 +172,7 @@ lbc = create_color(0,1,0,1)
 rbc = create_color(0,1,1,1)
 
 point_on_plane = 1.0
+
+camera_xz_rotation=0
+
+upx, upy, upz = 0,1,0

@@ -1,5 +1,6 @@
 mx, my = 0,0
 mouse_delta = 0
+local vx, vy, vz
 
 function set_axes_color(axes, name, start)
     o_r, o_g, o_b, o_a = gh_polyline.get_vertex_color(pl_id, start)
@@ -65,7 +66,10 @@ function test_window()
     --end
     gh_imgui.text(text)
     gh_imgui.separator()
-    point_on_plane = gh_imgui.slider_1f("point_on_plane", point_on_plane, 0.0, 3*math.pi, 1)
+    point_on_plane = gh_imgui.slider_1f("point_on_plane", point_on_plane, 0.0, 2*math.pi, 1)
+    camera_xz_rotation = gh_imgui.slider_1f("camera_xz_rotation", camera_xz_rotation, 0.0, 2*math.pi, 1)
+    gh_imgui.separator()
+    gh_imgui.text("vx="..tostring(vx)..", vy="..tostring(vy)..", vz="..tostring(vz))
 
     gh_imgui.window_end()
 end
@@ -125,8 +129,9 @@ function render()
     draw_quadtree_planes(4, math.cos(point_on_plane), math.sin(point_on_plane), 0, 0, -1, 1, plane_scale)
     -- Grid
     --
-    gh_object.set_scale(axes, 10, 10, 10)
-    --gh_object.render(axes)
+    gh_object.set_scale(axes, 20, 20, 10)
+    gh_gpu_program.uniform4f(simple_prog, "u_color", 0,1,0,1)
+    gh_object.render(axes)
     if draw_grid == 1 then
         gh_gpu_program.bind(vertex_color_prog)
         gh_object.render(grid)
@@ -134,14 +139,14 @@ function render()
 end
 
 function begin_frame()
-    local elapsed_time = math.rad(180);--gh_utils.get_elapsed_time()
+    local elapsed_time = camera_xz_rotation--gh_utils.get_elapsed_time()
 
     -- Simple camera animation: we rotate around the grid at a constant height.
     --
     local rotate_speed = 0.8
-    local x = 40 * math.cos(elapsed_time * rotate_speed)
+    local x = 40 * math.cos(camera_xz_rotation)
     local y = 30
-    local z = 40 * math.sin(elapsed_time * rotate_speed)
+    local z = 40 * math.sin(camera_xz_rotation)
     gh_camera.set_position(camera, x, y, z)
     gh_camera.set_lookat(camera, 0, 0, 0, 1)
 
@@ -171,9 +176,56 @@ function frame()
     end_frame()
 end
 
+function check_keyboard()
+    -- More key codes can be found in GeeXLab forum.
+    local KC_W = 17
+    local KC_S = 31
+    local KC_A = 30
+    local KC_D = 32
+    local KC_LEFT = 75
+    local KC_RIGHT = 77
+    local KC_UP = 72
+    local KC_DOWN = 80
+    local KC_SPACE = 57
+
+    gh_input.keyboard_update_buffer()
+    local forward = gh_input.keyboard_is_key_down(KC_W)
+    local backward = gh_input.keyboard_is_key_down(KC_S)
+    local left = gh_input.keyboard_is_key_down(KC_A)
+    local right = gh_input.keyboard_is_key_down(KC_D)
+
+    vx,vy,vz = gh_camera.get_view(camera)
+    local speed = 0.8
+    if (forward == 1) then
+        --gh_camera.set_position(camera, 100, 100, 100)
+        --gh_camera.set_lookat(camera, 10, 10, 10)
+        
+        px, py, pz = gh_camera.get_position(camera)
+        nx,ny,nz = speed * gh_utils.math_normalize_vec3(gh_camera.get_view(camera))
+        nx = nx + px
+        ny = py
+        nz = nz + pz
+        gh_camera.set_position(camera,  nx,ny,nz)
+    end
+    if (backward == 1) then
+        --gh_camera.set_position(camera, 100, 100, 100)
+    end
+    if (left == 1) then
+        --gh_camera.set_position(camera, 100, 100, 100)
+    end
+    if (right == 1) then
+        --gh_camera.set_position(camera, 100, 100, 100)
+    end
+    --gh_camera.bind(camera)
+
+end
+
 function check_input()
+    check_keyboard()
     mouse_delta = gh_input.mouse_get_wheel_delta()
     mx, my = gh_input.mouse_get_position()
+
+    --if gh_input.key_pressed
 end
 
 frame()
