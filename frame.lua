@@ -40,18 +40,22 @@ function traverse_tree(tree, level)
         cc = tree.childs[0]
         if ( cc ~= nil) then
             draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
+            traverse_tree(cc, level + 1)
         end
         cc = tree.childs[1]
         if ( cc ~= nil) then
             draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
+            traverse_tree(cc, level + 1)
         end
         cc = tree.childs[2]
         if ( cc ~= nil) then
             draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
+            traverse_tree(cc, level + 1)
         end
         cc = tree.childs[3]
         if ( cc ~= nil) then
             draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
+            traverse_tree(cc, level + 1)
         end
     end
 
@@ -59,7 +63,7 @@ function traverse_tree(tree, level)
 end
 
 function draw_tree(tree)
-    traverse_tree(tree, level)
+    traverse_tree(tree, 0)
 end
 
 function set_axes_color(axes, name, start)
