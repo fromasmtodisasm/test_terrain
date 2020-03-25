@@ -3,7 +3,7 @@
 <glsl_hacker>
 	
   <window name="win3d01" title="Textured 3D Box" width="800" height="500"
-          gl_version_major="2" gl_version_minor="1" />
+          gl_version_major="3" gl_version_minor="2" />
   
  
   
@@ -53,33 +53,15 @@ gh_utils.font_set_viewport_info(font, 0, 0, winW, winH)
 <!--
 	A simple texturing GPU programs.
 -->	
-  <gpu_program name="tex_prog" >
-    <raw_data_vs><![CDATA[	 
- 
-#version 120
+  <gpu_program name="tex_prog" 
+    filename_vs="shaders/gl32_vs.glsl" livecoding_from_file_vs="1"
+    filename_gs="shaders/gl32_gs.glsl" livecoding_from_file_gs="1"
+    filename_ps="shaders/gl32_ps.glsl" livecoding_from_file_ps="1" >    
+  </gpu_program>
 
-uniform float radii = 5;
-varying vec4 v_uv;
-
-void main()
-{
-  vec4 point =vec4( radii * normalize(gl_Vertex.xyz), gl_Vertex.w); 
-  gl_Position = normalize(gl_ModelViewProjectionMatrix * point);  
-  v_uv = gl_MultiTexCoord0;
-}
-  
-  ]]></raw_data_vs>
-    <raw_data_ps><![CDATA[	 
-#version 120
-uniform sampler2D tex0;
-varying vec4 v_uv;
-void main (void)
-{
-  vec2 uv = v_uv.xy;
-  uv.y *= -1.0;
-  gl_FragColor = texture2D(tex0, uv);
-}
-    ]]></raw_data_ps>
+  <gpu_program name="simple_prog" 
+    filename_vs="shaders/simple_vs.glsl" livecoding_from_file_vs="1"
+    filename_ps="shaders/simple_fs.glsl" livecoding_from_file_ps="1" >    
   </gpu_program>
   
 
