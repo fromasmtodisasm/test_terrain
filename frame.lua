@@ -73,7 +73,10 @@ function test_window()
     gh_imgui.separator()
     gh_imgui.text("recursion_count = "..tostring(recursion_count))
     gh_imgui.text("quad_tree_path:"..quad_tree_path)
-    gh_imgui.text("test_string:"..test_string)
+    --gh_imgui.text("test_string:"..test_string)
+    flags = ImGuiInputTextFlags_Multiline
+
+    text, state = gh_imgui.input_text("test_string", 4096, test_string, flags)
 
     gh_imgui.window_end()
 end
@@ -102,16 +105,19 @@ function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
     recursion_count = recursion_count + 1
     test_string=test_string.."{depth="..tostring(depth)
     if depth < max_depth then
+        local sx,sz
+        sx = math.abs(bx) / 4 
+        sz = math.abs(bz) / 4 
         if px < ox then 
             test_string=test_string.."[px < ox,"
             if pz < oz then
                 test_string=test_string.."pz > oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox - 0.5, oz - 0.5, bx, bz, scale / 2)
+                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz - sz, bx/2, bz/2, scale / 2)
                 quad_tree_path = quad_tree_path.."ltc,"
                 draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, ltc)
             else
                 test_string=test_string.."pz < oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox - 0.5, oz + 0.5, bx, bz,  scale / 2)
+                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz + sz, bx/2, bz/2,  scale / 2)
                 quad_tree_path = quad_tree_path.."rtc,"
                 draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rtc)
 
@@ -120,12 +126,12 @@ function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
             test_string=test_string.."[px > ox,"
             if pz < oz then
                 test_string=test_string.."pz < oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox + 0.5, oz - 0.5, bx, bz,  scale / 2)
+                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz - sz, bx/2, bz/2,  scale / 2)
                 quad_tree_path = quad_tree_path.."lbc,"
                 draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
             else
                 test_string=test_string.."pz > oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox + 0.5, oz + 0.5, bx, bz,  scale / 2)
+                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz + sz, bx/2, bz/2,  scale / 2)
                 quad_tree_path = quad_tree_path.."rbc,"
                 draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rbc)
             end
@@ -134,7 +140,7 @@ function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
         test_string=test_string.."depth="..tostring(depth)
     end
     test_string=test_string.."}"
-    draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
+    --draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
     --draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, ltc)
     --draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rtc)
     --draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, lbc)
@@ -152,7 +158,7 @@ function render()
     quad_tree_path=""
     qx, qz = px, pz
     --qx, qz =  
-    draw_quadtree_planes(0, qx,qz, 0, 0, -1, 1, plane_scale)
+    draw_quadtree_planes(0, qx,qz, 0, 0, 2, 2, plane_scale)
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
