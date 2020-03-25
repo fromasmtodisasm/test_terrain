@@ -126,7 +126,8 @@ function render()
     -- Textured box
     --
     --draw_box()
-    draw_quadtree_planes(4, math.cos(point_on_plane), math.sin(point_on_plane), 0, 0, -1, 1, plane_scale)
+    local px, pz = math.cos(point_on_plane), math.sin(point_on_plane)
+    draw_quadtree_planes(4, px,pz, 0, 0, -1, 1, plane_scale)
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
@@ -136,6 +137,10 @@ function render()
         gh_gpu_program.bind(vertex_color_prog)
         gh_object.render(grid)
     end
+
+    gh_object.set_position(test_point, plane_scale * px, 0, plane_scale * pz)
+    gh_gpu_program.uniform4f(simple_prog, "u_color", 1,0,0,1)
+    gh_object.render(test_point)
 end
 
 function begin_frame()
@@ -200,7 +205,7 @@ function check_keyboard()
         --gh_camera.set_position(camera, 100, 100, 100)
         --gh_camera.set_lookat(camera, 10, 10, 10)
         
-        px, py, pz = gh_camera.get_position(camera)
+        local px, py, pz = gh_camera.get_position(camera)
         nx,ny,nz = speed * gh_utils.math_normalize_vec3(gh_camera.get_view(camera))
         nx = nx + px
         ny = py

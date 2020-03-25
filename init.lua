@@ -176,3 +176,5 @@ point_on_plane = 1.0
 camera_xz_rotation=0
 
 upx, upy, upz = 0,1,0
+
+test_point = gh_mesh.create_plane_v3(1,1, 1, 1, 0.0, 0.0, 0.0)
