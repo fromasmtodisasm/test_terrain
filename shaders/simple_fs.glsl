@@ -8,4 +8,5 @@ out vec4 FragColor;
 void main()
 {
     FragColor = Vertex_Color;
+    //FragColor = vec4(1,0,1,1);
 }

@@ -1,3 +1,6 @@
+function create_color(r,g,b,a) 
+    return {r=r,g=g,b=b,a=a}
+end
 -- The folder of the demo. Useful for loading data with absolute path.
 --
 local demo_dir = gh_utils.get_demo_dir()
@@ -158,3 +161,10 @@ end
 --
 gh_renderer.set_vsync(0)
 gh_renderer.set_depth_test_state(1)
+
+ltc = create_color(0,0,0,1)
+rtc = create_color(0,0,1,1)
+lbc = create_color(0,1,0,1)
+rbc = create_color(0,1,1,1)
+
+point_on_plane = 1.0

@@ -64,6 +64,8 @@ function test_window()
         --gh_object.set_position(mesh_plane, 0, tonumber(text), 0)
     --end
     gh_imgui.text(text)
+    gh_imgui.separator()
+    point_on_plane = gh_imgui.slider_1f("point_on_plane", point_on_plane, 0.0, 3*math.pi, 1)
 
     gh_imgui.window_end()
 end
@@ -78,35 +80,41 @@ function wireframe(enable)
     end
 end
 
-function draw_plane(x, y, z, scale) 
+function draw_plane(x, y, z, scale, color) 
+    gh_object.set_vertices_color(mesh_id, color.r, color.g, color.b, color.a)
     gh_object.set_scale(mesh_plane, scale, scale, scale)
     gh_object.set_position(mesh_plane, x, y, z)
     gh_gpu_program.bind(simple_prog)
+    gh_gpu_program.uniform4f(simple_prog, "u_color", color.r, color.g, color.b, color.a)
     gh_object.render(mesh_plane)
 
 end
-function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz)
+function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
     --plane_scale = 4
     if depth < max_depth then
         if px < ox then 
             if pz < oz then
-
-
+                draw_quadtree_planes(depth + 1, px, pz, ox - 0.5, oz - 0.5, bx, bz, scale / 2)
+                draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, ltc)
             else
+                draw_quadtree_planes(depth + 1, px, pz, ox - 0.5, oz + 0.5, bx, bz,  scale / 2)
+                draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rtc)
 
             end
         else
             if pz < oz then
-
+                draw_quadtree_planes(depth + 1, px, pz, ox + 0.5, oz - 0.5, bx, bz,  scale / 2)
+                draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, lbc)
             else
-
+                draw_quadtree_planes(depth + 1, px, pz, ox + 0.5, oz + 0.5, bx, bz,  scale / 2)
+                draw_plane(plane_x + plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rbc)
             end
         end
     end
-    draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale)
-    draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale)
-    draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale)
-    draw_plane(plane_x + plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale)
+    --draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, ltc)
+    --draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rtc)
+    --draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, lbc)
+    --draw_plane(plane_x + plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rbc)
 end
 
 
@@ -114,7 +122,7 @@ function render()
     -- Textured box
     --
     --draw_box()
-    draw_quadtree_planes(4, 0.73, 0.73, 0, 0, -1, 1)
+    draw_quadtree_planes(4, math.cos(point_on_plane), math.sin(point_on_plane), 0, 0, -1, 1, plane_scale)
     -- Grid
     --
     gh_object.set_scale(axes, 10, 10, 10)
@@ -126,7 +134,7 @@ function render()
 end
 
 function begin_frame()
-    local elapsed_time = gh_utils.get_elapsed_time()
+    local elapsed_time = math.rad(180);--gh_utils.get_elapsed_time()
 
     -- Simple camera animation: we rotate around the grid at a constant height.
     --
