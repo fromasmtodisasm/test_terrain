@@ -2,24 +2,40 @@ mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
 
-function create_node(depth, rx,rz) 
+function create_node(x,z, color) 
     local result = {}
 
-    result.rx = rx
-    result.rz = rz
-    result.depth = depth
-
+    result.x = x
+    result.z = z
+    result.color = color
+    return result
 end
 
-function create_quad_tree()
+function create_quad_tree(depth, x,z)
     local result = {}
 
+    result.node = create_node(depth, x,z)
     result.childs = {}
     result.childs[0] = nil
     result.childs[1] = nil
     result.childs[2] = nil
     result.childs[3] = nil
+    return result
 
+end
+
+
+
+function traverse_tree(tree, level)
+    
+    for child in tree.childs do
+        traverse_tree(child, level)
+    end
+
+end
+
+function draw_tree(tree)
+    traverse_tree(tree, level)
 end
 
 function set_axes_color(axes, name, start)
@@ -120,10 +136,16 @@ function draw_plane(x, y, z, scale, color)
     gh_object.render(mesh_plane)
 
 end
-function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale, qt)
+function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale, tree)
     --plane_scale = 4
     recursion_count = recursion_count + 1
     test_string=test_string.."{depth="..tostring(depth)
+    --tree.childs[0] = create_quad_tree(1,0,0)
+    --[[
+    tree.childs[1] = create_quad_tree(1,0,1)
+    tree.childs[2] = create_quad_tree(1,1,0)
+    tree.childs[3] = create_quad_tree(1,0,1)
+    ]]
     if depth < max_depth then
         local sx,sz
         sx = math.abs(bx) / 4 
@@ -134,12 +156,14 @@ function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale, qt)
                 test_string=test_string.."pz > oz],"
                 n = math.pow(2, depth)
                 --qt.childs[0] = create_node(depth, )
-                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz - sz, bx/2, bz/2, scale / 2)
+                tree.childs[0] = create_quad_tree(1, 0, 0)
+                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz - sz, bx/2, bz/2, scale / 2, tree)
                 quad_tree_path = quad_tree_path.."ltc,"
                 draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, ltc)
             else
                 test_string=test_string.."pz < oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz + sz, bx/2, bz/2,  scale / 2)
+                tree.childs[1] = create_quad_tree(1, 0, 1)
+                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz + sz, bx/2, bz/2,  scale / 2, tree)
                 quad_tree_path = quad_tree_path.."rtc,"
                 draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rtc)
 
@@ -148,25 +172,24 @@ function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale, qt)
             test_string=test_string.."[px > ox,"
             if pz < oz then
                 test_string=test_string.."pz < oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz - sz, bx/2, bz/2,  scale / 2)
+                tree.childs[2] = create_quad_tree(1, 1, 0)
+                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz - sz, bx/2, bz/2,  scale / 2, tree)
                 quad_tree_path = quad_tree_path.."lbc,"
                 draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
             else
                 test_string=test_string.."pz > oz],"
-                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz + sz, bx/2, bz/2,  scale / 2)
+                tree.childs[3] = create_quad_tree(1, 1, 1)
+                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz + sz, bx/2, bz/2,  scale / 2, tree)
                 quad_tree_path = quad_tree_path.."rbc,"
                 draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rbc)
             end
         end
+        quad_tree_path = quad_tree_path.."{out},"
     else
         test_string=test_string.."depth="..tostring(depth)
     end
     test_string=test_string.."}"
-    --draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
-    --draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, ltc)
-    --draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rtc)
-    --draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, lbc)
-    --draw_plane(plane_x + plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rbc)
+    return tree
 end
 
 
@@ -180,8 +203,8 @@ function render()
     quad_tree_path=""
     qx, qz = px, pz
     --qx, qz =  
-    local qt = create_quad_tree();
-    draw_quadtree_planes(0, qx,qz, 0, 0, 2, 2, plane_scale, qt)
+    --local qt = create_quad_tree(0, 0,0)
+    draw_quadtree_planes(0, qx,qz, 0, 0, 2, 2, plane_scale, create_quad_tree(0, 0,0))
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
