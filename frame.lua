@@ -2,6 +2,26 @@ mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
 
+function create_node(depth, rx,rz) 
+    local result = {}
+
+    result.rx = rx
+    result.rz = rz
+    result.depth = depth
+
+end
+
+function create_quad_tree()
+    local result = {}
+
+    result.childs = {}
+    result.childs[0] = nil
+    result.childs[1] = nil
+    result.childs[2] = nil
+    result.childs[3] = nil
+
+end
+
 function set_axes_color(axes, name, start)
     o_r, o_g, o_b, o_a = gh_polyline.get_vertex_color(pl_id, start)
     o_r, o_g, o_b, o_a = gh_polyline.get_vertex_color(pl_id, start + 1)
@@ -100,7 +120,7 @@ function draw_plane(x, y, z, scale, color)
     gh_object.render(mesh_plane)
 
 end
-function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
+function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale, rx, ry)
     --plane_scale = 4
     recursion_count = recursion_count + 1
     test_string=test_string.."{depth="..tostring(depth)
@@ -112,6 +132,7 @@ function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
             test_string=test_string.."[px < ox,"
             if pz < oz then
                 test_string=test_string.."pz > oz],"
+                draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, ltc)
                 draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz - sz, bx/2, bz/2, scale / 2)
                 quad_tree_path = quad_tree_path.."ltc,"
                 draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, ltc)
