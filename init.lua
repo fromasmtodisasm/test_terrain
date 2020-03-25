@@ -140,7 +140,8 @@ gh_utils.grid_set_display_lines_options(grid, display_main_lines, display_lines)
 
 plane_x, plane_y, plane_z = 0,0,0
 plane_scale = 1
-mesh_plane = gh_mesh.create_plane_v3(1,1, 4,4, 0.0, 0.0, 0.0)
+local subdivisions = 16 
+mesh_plane = gh_mesh.create_plane_v3(1,1, subdivisions,subdivisions, 0.0, 0.0, 0.0)
 
 axes = create_axes();
 
@@ -178,3 +179,8 @@ camera_xz_rotation=0
 upx, upy, upz = 0,1,0
 
 test_point = gh_mesh.create_plane_v3(1,1, 1, 1, 0.0, 0.0, 0.0)
+
+recursion_count = 0
+
+quad_tree_path = ""
+test_string = ""

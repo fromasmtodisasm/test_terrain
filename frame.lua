@@ -52,7 +52,7 @@ function test_window()
     plane_x = gh_imgui.slider_1f("position_x", plane_x, -20, 20, 1)
     plane_y = gh_imgui.slider_1f("position_y", plane_y, -20, 20, 1)
     plane_z = gh_imgui.slider_1f("position_z", plane_z, -20, 20, 1)
-    plane_scale = gh_imgui.slider_1f("scale", plane_scale, 1, 10, 1)
+    plane_scale = gh_imgui.slider_1f("scale", plane_scale, 1, 20, 1)
     gh_imgui.separator()
     --set_axes_color(axes, "x", 0)
     --set_axes_color(axes, "y", 2)
@@ -70,6 +70,10 @@ function test_window()
     camera_xz_rotation = gh_imgui.slider_1f("camera_xz_rotation", camera_xz_rotation, 0.0, 2*math.pi, 1)
     gh_imgui.separator()
     gh_imgui.text("vx="..tostring(vx)..", vy="..tostring(vy)..", vz="..tostring(vz))
+    gh_imgui.separator()
+    gh_imgui.text("recursion_count = "..tostring(recursion_count))
+    gh_imgui.text("quad_tree_path:"..quad_tree_path)
+    gh_imgui.text("test_string:"..test_string)
 
     gh_imgui.window_end()
 end
@@ -95,26 +99,42 @@ function draw_plane(x, y, z, scale, color)
 end
 function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale)
     --plane_scale = 4
+    recursion_count = recursion_count + 1
+    test_string=test_string.."{depth="..tostring(depth)
     if depth < max_depth then
         if px < ox then 
+            test_string=test_string.."[px < ox,"
             if pz < oz then
+                test_string=test_string.."pz > oz],"
                 draw_quadtree_planes(depth + 1, px, pz, ox - 0.5, oz - 0.5, bx, bz, scale / 2)
-                draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, ltc)
+                quad_tree_path = quad_tree_path.."ltc,"
+                draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, ltc)
             else
+                test_string=test_string.."pz < oz],"
                 draw_quadtree_planes(depth + 1, px, pz, ox - 0.5, oz + 0.5, bx, bz,  scale / 2)
-                draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rtc)
+                quad_tree_path = quad_tree_path.."rtc,"
+                draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rtc)
 
             end
         else
+            test_string=test_string.."[px > ox,"
             if pz < oz then
+                test_string=test_string.."pz < oz],"
                 draw_quadtree_planes(depth + 1, px, pz, ox + 0.5, oz - 0.5, bx, bz,  scale / 2)
-                draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, lbc)
+                quad_tree_path = quad_tree_path.."lbc,"
+                draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
             else
+                test_string=test_string.."pz > oz],"
                 draw_quadtree_planes(depth + 1, px, pz, ox + 0.5, oz + 0.5, bx, bz,  scale / 2)
-                draw_plane(plane_x + plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rbc)
+                quad_tree_path = quad_tree_path.."rbc,"
+                draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rbc)
             end
         end
+    else
+        test_string=test_string.."depth="..tostring(depth)
     end
+    test_string=test_string.."}"
+    draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
     --draw_plane(plane_x - plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, ltc)
     --draw_plane(plane_x - plane_scale/2, plane_y, plane_z + plane_scale/2, plane_scale, rtc)
     --draw_plane(plane_x + plane_scale/2, plane_y, plane_z - plane_scale/2, plane_scale, lbc)
@@ -127,7 +147,12 @@ function render()
     --
     --draw_box()
     local px, pz = math.cos(point_on_plane), math.sin(point_on_plane)
-    draw_quadtree_planes(4, px,pz, 0, 0, -1, 1, plane_scale)
+    recursion_count = 0
+    test_string=""
+    quad_tree_path=""
+    qx, qz = px, pz
+    --qx, qz =  
+    draw_quadtree_planes(0, qx,qz, 0, 0, -1, 1, plane_scale)
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
@@ -138,7 +163,7 @@ function render()
         gh_object.render(grid)
     end
 
-    gh_object.set_position(test_point, plane_scale * px, 0, plane_scale * pz)
+    gh_object.set_position(test_point, 0.75*plane_scale * qx, 0.015, 0.75*plane_scale * qz)
     gh_gpu_program.uniform4f(simple_prog, "u_color", 1,0,0,1)
     gh_object.render(test_point)
 end
