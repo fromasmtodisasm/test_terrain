@@ -2,6 +2,10 @@ mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
 
+local size_str=""
+local scale_str=""
+local origin_str=""
+
 function create_node(x,z, color) 
     local result = {}
 
@@ -145,6 +149,15 @@ function test_window()
     py_speed = gh_imgui.slider_1f("py_speed", py_speed, 0.1, 1.0, 0.1)
 
     text, state = gh_imgui.input_text("test_string", 4096, test_string, flags)
+    gh_imgui.separator()
+    local px, pz = math.cos(et*px_speed), math.sin(et*py_speed)
+    gh_imgui.text("px: "..px*plane_scale.."pz: "..pz*plane_scale)
+    gh_imgui.separator()
+    pause = gh_imgui.checkbox("pause", pause)
+    gh_imgui.text("size: "..size_str)
+    gh_imgui.text("scale: "..scale_str)
+    gh_imgui.text("origin: "..origin_str)
+    
 
     gh_imgui.window_end()
 end
@@ -161,15 +174,15 @@ end
 
 function draw_plane(x, y, z, scale, color) 
     gh_object.set_vertices_color(mesh_id, color.r, color.g, color.b, color.a)
-    gh_object.set_scale(mesh_plane, scale, scale, scale)
     gh_object.set_position(mesh_plane, x, y, z)
+    gh_object.set_scale(mesh_plane, scale, scale, scale)
     gh_gpu_program.bind(simple_prog)
     gh_gpu_program.uniform4f(simple_prog, "u_color", color.r, color.g, color.b, color.a)
     gh_object.render(mesh_plane)
 
 end
 
-function get_quad_by_index(i)
+function get_quad_by_index(i, depth)
     local result = {}
     if i == 0 then
         result.x = -0.5;
@@ -188,6 +201,8 @@ function get_quad_by_index(i)
         result.y = 0.5;
         result.color = rbc
     end
+    result.x = math.pow(result.x, depth)
+    result.y = math.pow(result.y, depth)
     return result
 end
 
@@ -210,45 +225,48 @@ end
 function get_offset_by_index(i)
     local ox, oy 
     if i == 0 then
-        ox = -0.5;
-        oy = -0.5;
+        ox = -1;
+        oy = -1;
     elseif i == 1 then
-        ox = -0.5;
-        oy = 0.5;
+        ox = -1;
+        oy = 1;
     elseif i == 2 then
-        ox = 0.5;
-        oy = -0.5;
+        ox = 1;
+        oy = -1;
     elseif i == 3 then
-        ox = 0.5;
-        oy = 0.5;
+        ox = 1;
+        oy = 1;
     end
     return ox, oy
 end
 
-function draw_quadtree_planes(depth, ox, oy, px, py, scale)
+function draw_quadtree_planes(depth, ox, oy, px, py, scale, size)
     local quads = {}
     local indecies = {[0] = false, [1] = false, [2] = false, [3] = false}
     local i
+
+    size_str=size_str..tostring(size)..","
+    scale_str=scale_str..tostring(scale)..","
+    origin_str=origin_str.."("..tostring(ox)..","..tostring(oy).."),"
     if depth < max_depth then
         local sx,sy
         i = get_index_by_position(ox, oy, px, py)
         indecies[i] = true
-        for i = 0, 3 do
-            if indecies[i] == true then
-                quad = get_quad_by_index(i)
-                --draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
-            else
-                offset_x, offset_y = get_offset_by_index(i)
-                quad_tree_path=quad_tree_path.."{"..tostring(offset_x)..", "..tostring(offset_y)
-                quad_tree_path=quad_tree_path.."?"..tostring(ox)..", "..tostring(oy)
-                draw_quadtree_planes(depth + 1, 2*(offset_x + ox), 2*(offset_y + oy), px, py, scale * 0.5)
-                quad_tree_path=quad_tree_path.."}"
-            end
-        end
-                --draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
-                draw_plane((ox)*scale, 0, (oy)*scale, scale, lbc)
-    else
     end
+    
+    for i = 0, 3 do
+        if indecies[i] == false then
+            quad = get_quad_by_index(i, depth)
+            draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
+        else
+            offset_x, offset_y = get_offset_by_index(i)
+            quad_tree_path=quad_tree_path.."{"..tostring(size*offset_x)..", "..tostring(size*offset_y)
+            quad_tree_path=quad_tree_path.."?"..tostring(ox)..", "..tostring(oy)
+            draw_quadtree_planes(depth + 1, (math.pow(0.5, depth + 1)*size*offset_x + ox), (math.pow(0.5, depth + 0)*0.5*size*offset_y + oy), px, py, scale * 0.5, size*0.5)
+            quad_tree_path=quad_tree_path.."}"
+        end
+    end
+
     return i
 end
 
@@ -258,15 +276,17 @@ function render()
     --
     --draw_box()
     local speed = 0.8
-    local et = gh_utils.get_elapsed_time()
-    local px, pz = math.cos(et*px_speed), math.sin(0.5*et*py_speed)
+    if pause ~= 1 then
+        et = gh_utils.get_elapsed_time()
+    end
+    local px, pz = math.cos(et*px_speed), math.sin(et*py_speed)
     recursion_count = 0
     test_string=""
     quad_tree_path=""
     qx, qz = px, pz
     --qx, qz =  
     local qt = create_quad_tree(0, 0,0)
-    local i = draw_quadtree_planes(0, 0,0, px, pz, plane_scale)
+    local i = draw_quadtree_planes(0, 0,0, qx, qz, plane_scale, 2)
     quad_tree_path=quad_tree_path.."qudrant: "..tostring(i)
 
     draw_tree(qt)
@@ -281,6 +301,7 @@ function render()
     end
 
     gh_object.set_position(test_point, 0.75*plane_scale * qx, 0.015, 0.75*plane_scale * qz)
+    gh_object.set_scale(test_point, 0.1, 0.1, 0.1)
     gh_gpu_program.uniform4f(simple_prog, "u_color", 1,0,0,1)
     gh_object.render(test_point)
 end
@@ -294,7 +315,7 @@ function begin_frame()
     local x = 40 * math.cos(camera_xz_rotation)
     local y = 30
     local z = 40 * math.sin(camera_xz_rotation)
-    gh_camera.set_position(camera, x, y, z)
+    --gh_camera.set_position(camera, x, y, z)
     gh_camera.set_lookat(camera, 0, 0, 0, 1)
 
     gh_camera.bind(camera)
