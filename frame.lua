@@ -236,7 +236,7 @@ function draw_quadtree_planes(depth, ox, oy, px, py, scale)
         for i = 0, 3 do
             if indecies[i] == true then
                 quad = get_quad_by_index(i)
-                draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
+                --draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
             else
                 offset_x, offset_y = get_offset_by_index(i)
                 quad_tree_path=quad_tree_path.."{"..tostring(offset_x)..", "..tostring(offset_y)
@@ -246,7 +246,7 @@ function draw_quadtree_planes(depth, ox, oy, px, py, scale)
             end
         end
                 --draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
-                --draw_plane((ox)*scale, 0, (oy)*scale, scale, lbc)
+                draw_plane((ox)*scale, 0, (oy)*scale, scale, lbc)
     else
     end
     return i
