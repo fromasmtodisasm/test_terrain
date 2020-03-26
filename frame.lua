@@ -281,7 +281,7 @@ function render()
     recursion_count = 0
     test_string=""
     quad_tree_path=""
-    qx, qz = px, pz
+    qx, qz = 0.75*px, 0.75*pz
     --qx, qz =  
     local qt = create_quad_tree(0, 0,0)
     local i = draw_quadtree_planes(0, 0,0, 0.5, qx, qz, plane_scale, 2)
@@ -298,7 +298,7 @@ function render()
         gh_object.render(grid)
     end
 
-    gh_object.set_position(test_point, 0.75*plane_scale * qx, 0.015, 0.75*plane_scale * qz)
+    gh_object.set_position(test_point, plane_scale * qx, 0.015, plane_scale * qz)
     gh_object.set_scale(test_point, 0.1, 0.1, 0.1)
     gh_gpu_program.uniform4f(simple_prog, "u_color", 1,0,0,1)
     gh_object.render(test_point)
