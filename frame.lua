@@ -134,7 +134,7 @@ function test_window()
     --end
     gh_imgui.text(text)
     gh_imgui.separator()
-    max_depth = gh_imgui.slider_1i("max_depth", max_depth, 0, 16)
+    max_depth = gh_imgui.slider_1i("max_depth", max_depth, 0, 32)
     point_on_plane = elapsed_time-- gh_imgui.slider_1f("point_on_plane", point_on_plane, 0.0, 2*math.pi, 1)
     camera_xz_rotation = gh_imgui.slider_1f("camera_xz_rotation", camera_xz_rotation, 0.0, 2*math.pi, 1)
     gh_imgui.separator()
@@ -299,7 +299,7 @@ function render()
     end
 
     gh_object.set_position(test_point, plane_scale * qx, 0.015, plane_scale * qz)
-    gh_object.set_scale(test_point, 0.1, 0.1, 0.1)
+    gh_object.set_scale(test_point, 0.01, 0.01, 0.01)
     gh_gpu_program.uniform4f(simple_prog, "u_color", 1,0,0,1)
     gh_object.render(test_point)
 end

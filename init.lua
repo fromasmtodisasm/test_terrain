@@ -20,7 +20,7 @@ if (winH > 0) then
   aspect = winW / winH
 end  
 
-world_position = {x = 2, y=2, z=2}
+world_position = {x = 1, y=1, z=1}
 camera = gh_camera.create_persp(60, aspect, 1.0, 100.0)
 gh_camera.set_viewport(camera, 0, 0, winW, winH)
 gh_camera.set_position(camera, world_position.x, world_position.y, world_position.z)
@@ -140,7 +140,7 @@ gh_utils.grid_set_display_lines_options(grid, display_main_lines, display_lines)
 
 plane_x, plane_y, plane_z = 0,0,0
 plane_scale = 1
-local subdivisions = 8 
+local subdivisions =  16
 mesh_plane = gh_mesh.create_plane_v3(1,1, subdivisions,subdivisions, 0.0, 0.0, 0.0)
 
 axes = create_axes();
