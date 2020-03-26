@@ -123,7 +123,7 @@ local i = 0
 --end
 
 
-max_depth = 5
+max_depth = 1 
 -- The reference grid.
 --
 grid = gh_utils.grid_create()
@@ -140,7 +140,7 @@ gh_utils.grid_set_display_lines_options(grid, display_main_lines, display_lines)
 
 plane_x, plane_y, plane_z = 0,0,0
 plane_scale = 1
-local subdivisions = 16 
+local subdivisions = 2 
 mesh_plane = gh_mesh.create_plane_v3(1,1, subdivisions,subdivisions, 0.0, 0.0, 0.0)
 
 axes = create_axes();
@@ -184,3 +184,6 @@ recursion_count = 0
 
 quad_tree_path = ""
 test_string = ""
+
+px_speed = 1
+py_speed = 1

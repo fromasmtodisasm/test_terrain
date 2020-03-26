@@ -116,7 +116,7 @@ function test_window()
     plane_x = gh_imgui.slider_1f("position_x", plane_x, -20, 20, 1)
     plane_y = gh_imgui.slider_1f("position_y", plane_y, -20, 20, 1)
     plane_z = gh_imgui.slider_1f("position_z", plane_z, -20, 20, 1)
-    plane_scale = gh_imgui.slider_1f("scale", plane_scale, 1, 20, 1)
+    plane_scale = gh_imgui.slider_1f("scale", plane_scale, 1, 40, 1)
     gh_imgui.separator()
     --set_axes_color(axes, "x", 0)
     --set_axes_color(axes, "y", 2)
@@ -130,7 +130,8 @@ function test_window()
     --end
     gh_imgui.text(text)
     gh_imgui.separator()
-    point_on_plane = gh_imgui.slider_1f("point_on_plane", point_on_plane, 0.0, 2*math.pi, 1)
+    max_depth = gh_imgui.slider_1i("max_depth", max_depth, 0, 16)
+    point_on_plane = elapsed_time-- gh_imgui.slider_1f("point_on_plane", point_on_plane, 0.0, 2*math.pi, 1)
     camera_xz_rotation = gh_imgui.slider_1f("camera_xz_rotation", camera_xz_rotation, 0.0, 2*math.pi, 1)
     gh_imgui.separator()
     gh_imgui.text("vx="..tostring(vx)..", vy="..tostring(vy)..", vz="..tostring(vz))
@@ -139,6 +140,9 @@ function test_window()
     gh_imgui.text("quad_tree_path:"..quad_tree_path)
     --gh_imgui.text("test_string:"..test_string)
     flags = ImGuiInputTextFlags_Multiline
+    gh_imgui.separator()
+    px_speed = gh_imgui.slider_1f("px_speed", px_speed, 0.1, 1.0, 0.1)
+    py_speed = gh_imgui.slider_1f("py_speed", py_speed, 0.1, 1.0, 0.1)
 
     text, state = gh_imgui.input_text("test_string", 4096, test_string, flags)
 
@@ -164,60 +168,88 @@ function draw_plane(x, y, z, scale, color)
     gh_object.render(mesh_plane)
 
 end
-function draw_quadtree_planes(depth, px, pz, ox, oz, bx, bz, scale, tree)
-    --plane_scale = 4
-    recursion_count = recursion_count + 1
-    test_string=test_string.."{depth="..tostring(depth)
-    --tree.childs[0] = create_quad_tree(1,0,0)
-    --[[
-    tree.childs[1] = create_quad_tree(1,0,1)
-    tree.childs[2] = create_quad_tree(1,1,0)
-    tree.childs[3] = create_quad_tree(1,0,1)
-    ]]
-    if depth < max_depth then
-        local sx,sz
-        sx = math.abs(bx) / 4 
-        sz = math.abs(bz) / 4 
-        if px < ox then 
-            test_string=test_string.."[px < ox,"
-            if pz < oz then
-                test_string=test_string.."pz > oz],"
-                n = math.pow(2, depth)
-                --qt.childs[0] = create_node(depth, )
-                tree.childs[0] = create_quad_tree(1, 0, 0)
-                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz - sz, bx/2, bz/2, scale / 2, tree)
-                quad_tree_path = quad_tree_path.."ltc,"
-                --draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, ltc)
-            else
-                test_string=test_string.."pz < oz],"
-                tree.childs[1] = create_quad_tree(1, 0, 1)
-                draw_quadtree_planes(depth + 1, px, pz, ox - sx, oz + sz, bx/2, bz/2,  scale / 2, tree)
-                quad_tree_path = quad_tree_path.."rtc,"
-                --draw_plane(plane_x - plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rtc)
 
-            end
+function get_quad_by_index(i)
+    local result = {}
+    if i == 0 then
+        result.x = -0.5;
+        result.y = -0.5;
+        result.color = lbc
+    elseif i == 1 then
+        result.x = -0.5;
+        result.y = 0.5;
+        result.color = ltc
+    elseif i == 2 then
+        result.x = 0.5;
+        result.y = -0.5;
+        result.color = rtc
+    elseif i == 3 then
+        result.x = 0.5;
+        result.y = 0.5;
+        result.color = rbc
+    end
+    return result
+end
+
+function get_index_by_position(ox, oy, px, py)
+    if px < ox then 
+        if py < oy then
+            return 0
         else
-            test_string=test_string.."[px > ox,"
-            if pz < oz then
-                test_string=test_string.."pz < oz],"
-                tree.childs[2] = create_quad_tree(1, 1, 0)
-                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz - sz, bx/2, bz/2,  scale / 2, tree)
-                quad_tree_path = quad_tree_path.."lbc,"
-                --draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z - plane_scale/2, plane_scale, lbc)
+            return 1
+        end
+    else
+        if py < oy then
+            return 2
+        else
+            return 3
+        end
+    end
+end
+
+function get_offset_by_index(i)
+    local ox, oy 
+    if i == 0 then
+        ox = -0.5;
+        oy = -0.5;
+    elseif i == 1 then
+        ox = -0.5;
+        oy = 0.5;
+    elseif i == 2 then
+        ox = 0.5;
+        oy = -0.5;
+    elseif i == 3 then
+        ox = 0.5;
+        oy = 0.5;
+    end
+    return ox, oy
+end
+
+function draw_quadtree_planes(depth, ox, oy, px, py, scale)
+    local quads = {}
+    local indecies = {[0] = false, [1] = false, [2] = false, [3] = false}
+    local i
+    if depth < max_depth then
+        local sx,sy
+        i = get_index_by_position(ox, oy, px, py)
+        indecies[i] = true
+        for i = 0, 3 do
+            if indecies[i] == true then
+                quad = get_quad_by_index(i)
+                draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
             else
-                test_string=test_string.."pz > oz],"
-                tree.childs[3] = create_quad_tree(1, 1, 1)
-                draw_quadtree_planes(depth + 1, px, pz, ox + sx, oz + sz, bx/2, bz/2,  scale / 2, tree)
-                quad_tree_path = quad_tree_path.."rbc,"
-                --draw_plane(plane_x + plane_scale/2, plane_y + 0.01, plane_z + plane_scale/2, plane_scale, rbc)
+                offset_x, offset_y = get_offset_by_index(i)
+                quad_tree_path=quad_tree_path.."{"..tostring(offset_x)..", "..tostring(offset_y)
+                quad_tree_path=quad_tree_path.."?"..tostring(ox)..", "..tostring(oy)
+                draw_quadtree_planes(depth + 1, 2*(offset_x + ox), 2*(offset_y + oy), px, py, scale * 0.5)
+                quad_tree_path=quad_tree_path.."}"
             end
         end
-        quad_tree_path = quad_tree_path.."{out},"
+                --draw_plane((ox + quad.x)*scale, 0, (oy + quad.y)*scale, scale, quad.color)
+                --draw_plane((ox)*scale, 0, (oy)*scale, scale, lbc)
     else
-        test_string=test_string.."depth="..tostring(depth)
     end
-    test_string=test_string.."}"
-    return tree
+    return i
 end
 
 
@@ -225,14 +257,17 @@ function render()
     -- Textured box
     --
     --draw_box()
-    local px, pz = math.cos(point_on_plane), math.sin(point_on_plane)
+    local speed = 0.8
+    local et = gh_utils.get_elapsed_time()
+    local px, pz = math.cos(et*px_speed), math.sin(0.5*et*py_speed)
     recursion_count = 0
     test_string=""
     quad_tree_path=""
     qx, qz = px, pz
     --qx, qz =  
     local qt = create_quad_tree(0, 0,0)
-    draw_quadtree_planes(0, qx,qz, 0, 0, 2, 2, plane_scale, qt)
+    local i = draw_quadtree_planes(0, 0,0, px, pz, plane_scale)
+    quad_tree_path=quad_tree_path.."qudrant: "..tostring(i)
 
     draw_tree(qt)
     -- Grid
