@@ -6,6 +6,13 @@ local size_str=""
 local scale_str=""
 local origin_str=""
 
+function Bounds(x1,y1, x2,y2)
+    local result = {}
+    result.lt = {x = x1, y = y1}
+    result.rb = {x = x2, y = y2}
+    return result
+end
+
 function QuadTree(x,y, color, bounds)
     local result = {}
 
@@ -209,12 +216,12 @@ function build_quadtree(depth, ox, oy, px, py, scale, size, qt)
     ]]
     for i = 0, 3 do
         local q = get_quad_by_index(i)
-        qt.children[i] = QuadTree(q.x, q.y, q.color)
+        qt.children[i] = QuadTree(q.x, q.y, q.color, Bounds(ox + q.x*math.pow(0.25, depth), oy + q.y*math.pow(0.25, depth), 0,0))
         --draw_plane(ox + q.x, 0, oy + q.y, 2, q.color)
     end
     for j = 0, 3 do
         local q = get_quad_by_index(j)
-        qt.children[0].children[j] = QuadTree(q.x, q.y, q.color)
+        qt.children[0].children[j] = QuadTree(q.x, q.y, q.color, Bounds(ox + q.x*math.pow(0.5, depth + 1), oy + q.y*math.pow(0.5, depth + 1), 0,0))
     end
 end
 
@@ -223,12 +230,12 @@ function draw_quadtree(qt, depth, ox, oy, px, py, scale)
         if #qt.children == 0 then
             --quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(scale)..";"
             quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(scale)..";"
-            draw_plane(ox + qt.x, 0, oy + qt.y, scale, qt.color)
+            draw_plane((qt.bounds.lt.x + qt.bounds.rb.x)*0.5*scale, 0, (qt.bounds.lt.y + qt.bounds.rb.y)*0.5*scale, scale, qt.color)
         else
             for i = 0, 3 do
                 quad_tree_path=quad_tree_path.."{"
                 offset_x, offset_y = get_offset_by_index(i)
-                draw_quadtree(qt.children[i], depth + 1, ox + math.pow(0.25,depth + 1)*offset_x, oy + math.pow(0.25,depth + 1)*offset_y, px, py, 0.25*scale) 
+                draw_quadtree(qt.children[i], depth + 1, ox + math.pow(0.25,depth + 1)*offset_x, oy + math.pow(0.25,depth + 1)*offset_y, px, py, 0.5*scale) 
                 quad_tree_path=quad_tree_path.."}"
             end
         end
@@ -250,14 +257,11 @@ function render()
     quad_tree_path=""
     qx, qz = 0.75*px, 0.75*pz
     --qx, qz =  
-    local qt = QuadTree(0, 0, lbc,
-    {
-        lt = {x = -1, y = 1},
-        rb = {x = 1, y = -1},
-    })
+    local qt = QuadTree(0, 0, lbc, Bounds(-1,1, 1,-1)
+    )
     build_quadtree(0, 0,0, qx, qz, plane_scale, 2, qt)
 
-    draw_quadtree(qt, 0, 0, 0, qx, qz, 2)
+    draw_quadtree(qt, 0, 0, 0, qx, qz, plane_scale)
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
