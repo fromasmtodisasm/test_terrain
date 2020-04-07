@@ -20,7 +20,7 @@ if (winH > 0) then
   aspect = winW / winH
 end  
 
-world_position = {x = 1, y=1, z=1}
+world_position = {x = 1, y=4, z=3}
 camera = gh_camera.create_persp(60, aspect, 1.0, 100.0)
 gh_camera.set_viewport(camera, 0, 0, winW, winH)
 gh_camera.set_position(camera, world_position.x, world_position.y, world_position.z)
@@ -167,7 +167,7 @@ end
 gh_renderer.set_vsync(0)
 gh_renderer.set_depth_test_state(1)
 
-ltc = create_color(0,0,0,1)
+ltc = create_color(1,0,0,1)
 rtc = create_color(0,0,1,1)
 lbc = create_color(0,1,0,1)
 rbc = create_color(0,1,1,1)

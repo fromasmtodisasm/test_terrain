@@ -6,68 +6,16 @@ local size_str=""
 local scale_str=""
 local origin_str=""
 
-function create_node(x,z, color) 
+function QuadTree(x,y, color, bounds)
     local result = {}
 
     result.x = x
-    result.z = z
-    result.scale = 32 
+    result.y = y
+    result.bounds = bounds
     result.color = color
-    return result
-end
-
-function create_quad_tree(depth, x,z)
-    local result = {}
-
-    color = {r=1, g=1, b=1, a=1}
-    result.node = create_node(depth, x,z, color)
-    result.childs = {}
-    result.childs[0] = nil
-    result.childs[1] = nil
-    result.childs[2] = nil
-    result.childs[3] = nil
+    result.children = {}
     return result
 
-end
-
-
-
-function traverse_tree(tree, level)
-    
-    if tree ~= nil then
-        local cc
-        --for child in tree.childs do
-        --    traverse_tree(child, level)
-        --end
-    --
-        color = {r=1, g=1, b=1, a=1}
-        cc = tree.childs[0]
-        if ( cc ~= nil) then
-            draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
-            traverse_tree(cc, level + 1)
-        end
-        cc = tree.childs[1]
-        if ( cc ~= nil) then
-            draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
-            traverse_tree(cc, level + 1)
-        end
-        cc = tree.childs[2]
-        if ( cc ~= nil) then
-            draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
-            traverse_tree(cc, level + 1)
-        end
-        cc = tree.childs[3]
-        if ( cc ~= nil) then
-            draw_plane(cc.node.x, cc.node.y, cc.node.z, cc.node.scale, color)
-            traverse_tree(cc, level + 1)
-        end
-    end
-
-
-end
-
-function draw_tree(tree)
-    traverse_tree(tree, 0)
 end
 
 function set_axes_color(axes, name, start)
@@ -182,23 +130,23 @@ function draw_plane(x, y, z, scale, color)
 
 end
 
-function get_quad_by_index(i, module)
+function get_quad_by_index(i)
     local result = {}
     if i == 0 then
-        result.x = -module;
-        result.y = -module;
+        result.x = -1;
+        result.y = -1;
         result.color = lbc
     elseif i == 1 then
-        result.x = -module;
-        result.y = module;
+        result.x = -1;
+        result.y = 1;
         result.color = ltc
     elseif i == 2 then
-        result.x = module;
-        result.y = -module;
+        result.x = 1;
+        result.y = -1;
         result.color = rtc
     elseif i == 3 then
-        result.x = module;
-        result.y = module;
+        result.x = 1;
+        result.y = 1;
         result.color = rbc
     end
     return result
@@ -220,52 +168,71 @@ function get_index_by_position(ox, oy, px, py)
     end
 end
 
-function get_offset_by_index(i, module)
+function get_offset_by_index(i)
     local ox, oy 
     if i == 0 then
-        ox = -module;
-        oy = -module;
+        ox = -1;
+        oy = -1;
     elseif i == 1 then
-        ox = -module;
-        oy = module;
+        ox = -1;
+        oy = 1;
     elseif i == 2 then
-        ox = module;
-        oy = -module;
+        ox = 1;
+        oy = -1;
     elseif i == 3 then
-        ox = module;
-        oy = module;
+        ox = 1;
+        oy = 1;
     end
     return ox, oy
 end
 
-function draw_quadtree_planes(depth, ox, oy, module, px, py, scale, size)
-    local quads = {}
-    local indecies = {[0] = false, [1] = false, [2] = false, [3] = false}
+function build_quadtree(depth, ox, oy, px, py, scale, size, qt)
+    --[[
     local i
 
-    size_str=size_str..tostring(size)..","
-    scale_str=scale_str..tostring(scale)..","
-    origin_str=origin_str.."("..tostring(ox)..","..tostring(oy).."),"
     if depth < max_depth then
         local sx,sy
-        i = get_index_by_position(ox, oy, px, py)
-        indecies[i] = true
+        offset_x, offset_z = get_offset_by_index(i)
+        qt.children[get_index_by_position(ox, oy, px, py)] = create_quad_tree(depth + 1, offset_x, offset_z)
     end
     
     for i = 0, 3 do
-        if indecies[i] == false then
-            quad = get_quad_by_index(i, module)
+        if qt.children[i] == nil then
+            quad = get_quad_by_index(i)
             draw_plane((ox + quad.x), 0, (oy + quad.y), scale, quad.color)
         else
-            offset_x, offset_y = get_offset_by_index(i, module)
-            quad_tree_path=quad_tree_path.."{"..tostring(size*offset_x)..", "..tostring(size*offset_y)
-            quad_tree_path=quad_tree_path.."?"..tostring(ox)..", "..tostring(oy)
-            draw_quadtree_planes(depth + 1, ox + offset_x, oy + offset_y, module*0.5, px, py, scale * 0.5, size*0.5)
-            --quad_tree_path=quad_tree_path.."}"
+            build_quadtree(depth + 1, ox + offset_x, oy + offset_y, px, py, scale * 0.5, size*0.5, qt.children[i])
         end
     end
 
     return i
+    ]]
+    for i = 0, 3 do
+        local q = get_quad_by_index(i)
+        qt.children[i] = QuadTree(q.x, q.y, q.color)
+        --draw_plane(ox + q.x, 0, oy + q.y, 2, q.color)
+    end
+    for j = 0, 3 do
+        local q = get_quad_by_index(j)
+        qt.children[0].children[j] = QuadTree(q.x, q.y, q.color)
+    end
+end
+
+function draw_quadtree(qt, depth, ox, oy, px, py, scale)
+    if qt ~= nil then
+        if #qt.children == 0 then
+            --quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(scale)..";"
+            quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(scale)..";"
+            draw_plane(ox + qt.x, 0, oy + qt.y, scale, qt.color)
+        else
+            for i = 0, 3 do
+                quad_tree_path=quad_tree_path.."{"
+                offset_x, offset_y = get_offset_by_index(i)
+                draw_quadtree(qt.children[i], depth + 1, ox + math.pow(0.25,depth + 1)*offset_x, oy + math.pow(0.25,depth + 1)*offset_y, px, py, 0.25*scale) 
+                quad_tree_path=quad_tree_path.."}"
+            end
+        end
+    end
 end
 
 
@@ -283,11 +250,14 @@ function render()
     quad_tree_path=""
     qx, qz = 0.75*px, 0.75*pz
     --qx, qz =  
-    local qt = create_quad_tree(0, 0,0)
-    local i = draw_quadtree_planes(0, 0,0, 0.5, qx, qz, plane_scale, 2)
-    quad_tree_path=quad_tree_path.."qudrant: "..tostring(i)
+    local qt = QuadTree(0, 0, lbc,
+    {
+        lt = {x = -1, y = 1},
+        rb = {x = 1, y = -1},
+    })
+    build_quadtree(0, 0,0, qx, qz, plane_scale, 2, qt)
 
-    draw_tree(qt)
+    draw_quadtree(qt, 0, 0, 0, qx, qz, 2)
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
