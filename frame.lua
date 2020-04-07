@@ -221,7 +221,10 @@ function build_quadtree(depth, ox, oy, px, py, scale, size, qt)
     end
     for j = 0, 3 do
         local q = get_quad_by_index(j)
-        qt.children[0].children[j] = QuadTree(q.x, q.y, q.color, Bounds(ox + q.x*math.pow(0.5, depth + 1), oy + q.y*math.pow(0.5, depth + 1), 0,0))
+        local o1, o2 = get_offset_by_index(0)
+        o1 = o1*0.25
+        o2 = o2*0.25
+        qt.children[0].children[j] = QuadTree(o1, o2, q.color, Bounds(o1 + q.x*math.pow(0.5, depth + 1), o2 + q.y*math.pow(0.5, depth + 1), o1,o2))
     end
 end
 
@@ -230,12 +233,14 @@ function draw_quadtree(qt, depth, ox, oy, px, py, scale)
         if #qt.children == 0 then
             --quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(scale)..";"
             quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(scale)..";"
-            draw_plane((qt.bounds.lt.x + qt.bounds.rb.x)*0.5*scale, 0, (qt.bounds.lt.y + qt.bounds.rb.y)*0.5*scale, scale, qt.color)
+            if depth ~= 1 then
+                draw_plane((qt.bounds.lt.x + qt.bounds.rb.x)*0.5*scale, 0, (qt.bounds.lt.y + qt.bounds.rb.y)*0.5*scale, scale, qt.color)
+            end
         else
             for i = 0, 3 do
                 quad_tree_path=quad_tree_path.."{"
                 offset_x, offset_y = get_offset_by_index(i)
-                draw_quadtree(qt.children[i], depth + 1, ox + math.pow(0.25,depth + 1)*offset_x, oy + math.pow(0.25,depth + 1)*offset_y, px, py, 0.5*scale) 
+                draw_quadtree(qt.children[i], depth + 1, ox + math.pow(0.25,depth + 1)*offset_x, oy + math.pow(0.25,depth + 1)*offset_y, px, py, math.pow(0.5, depth)) 
                 quad_tree_path=quad_tree_path.."}"
             end
         end
