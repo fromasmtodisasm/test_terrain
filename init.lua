@@ -139,7 +139,7 @@ local display_lines = 1
 gh_utils.grid_set_display_lines_options(grid, display_main_lines, display_lines)
 
 plane_x, plane_y, plane_z = 0,0,0
-plane_scale = 1
+plane_size = 1
 local subdivisions =  16
 mesh_plane = gh_mesh.create_plane_v3(1,1, subdivisions,subdivisions, 0.0, 0.0, 0.0)
 
@@ -189,3 +189,11 @@ px_speed = 1
 py_speed = 1
 pause = 0
 et = gh_utils.get_elapsed_time()
+
+test_data =
+{
+  root_node_size = 1,
+  depth = 0,
+  origin = {x = 0, y = 0},
+  n=0
+}
