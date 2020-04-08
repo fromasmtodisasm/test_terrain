@@ -2,7 +2,7 @@ mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
 max_depth = 8
-k = 1.1
+k = 2.5
 
 local size_str=""
 local scale_str=""
