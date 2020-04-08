@@ -77,7 +77,7 @@ function test_window()
     plane_y = gh_imgui.slider_1f("position_y", plane_y, -20, 20, 1)
     plane_z = gh_imgui.slider_1f("position_z", plane_z, -20, 20, 1)
     plane_size = gh_imgui.slider_1f("size", plane_size, 1, 40, 1)
-    plane_size = 2
+    plane_size = 1
     gh_imgui.separator()
     --set_axes_color(axes, "x", 0)
     --set_axes_color(axes, "y", 2)
@@ -219,7 +219,12 @@ function need_split(depth, x, y, ox, oy, L)
             math.min(math.abs(x-ox), math.abs(x-ox-L)), 
             math.min(math.abs(y-oy), math.abs(y-oy-L))
         )
-        return L/d < k
+        if d < k*L then
+            return true
+        else
+            return false
+        end
+
         --return true
     end
     return false
