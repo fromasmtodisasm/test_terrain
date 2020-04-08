@@ -202,12 +202,9 @@ end
 
 function get_origin(depth, pox, poy, n)
     local ox, oy = get_offset_by_index(n)
-    local rx, ry
-    ox = 0.5*get_node_size(depth, plane_size)*ox
-    oy = 0.5*get_node_size(depth, plane_size)*oy
-    rx = pox + ox
-    ry = poy + oy
-    return rx,ry
+    return 
+        pox + 0.5*get_node_size(depth, plane_size)*ox, 
+        poy + 0.5*get_node_size(depth, plane_size)*oy
 end
 
 function CreateQuadTree(depth, ox, oy, px, py)
