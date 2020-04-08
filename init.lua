@@ -123,7 +123,7 @@ local i = 0
 --end
 
 
-max_depth = 1 
+max_depth = 2 
 -- The reference grid.
 --
 grid = gh_utils.grid_create()
@@ -197,3 +197,5 @@ test_data =
   origin = {x = 0, y = 0},
   n=0
 }
+
+k = 1.5

@@ -1,6 +1,7 @@
 mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
+max_depth = 4
 
 local size_str=""
 local scale_str=""
@@ -75,7 +76,8 @@ function test_window()
     plane_x = gh_imgui.slider_1f("position_x", plane_x, -20, 20, 1)
     plane_y = gh_imgui.slider_1f("position_y", plane_y, -20, 20, 1)
     plane_z = gh_imgui.slider_1f("position_z", plane_z, -20, 20, 1)
-    plane_size = gh_imgui.slider_1f("scale", plane_size, 1, 40, 1)
+    plane_size = gh_imgui.slider_1f("size", plane_size, 1, 40, 1)
+    plane_size = 2
     gh_imgui.separator()
     --set_axes_color(axes, "x", 0)
     --set_axes_color(axes, "y", 2)
@@ -196,8 +198,8 @@ end
 function get_origin(depth, pox, poy, n)
     local ox, oy = get_offset_by_index(n)
     local rx, ry
-    ox = ox*math.pow(0.5, depth)*0.5
-    oy = oy*math.pow(0.5, depth)*0.5
+    ox = plane_size*ox*math.pow(0.5, depth)*0.5
+    oy = plane_size*oy*math.pow(0.5, depth)*0.5
     rx = pox + ox
     ry = poy + oy
     return rx,ry
@@ -211,22 +213,34 @@ function CreateQuadTree(depth, ox, oy, px, py)
     return QuadTree(pcx, pcy, q.color)
 end
 
-function build_quadtree(qt, depth, px, py)
+function need_split(depth, x, y, ox, oy, L)
     if depth < max_depth then
+        local d = math.max(
+            math.min(math.abs(x-ox), math.abs(x-ox-L)), 
+            math.min(math.abs(y-oy), math.abs(y-oy-L))
+        )
+        return L/d < k
+        --return true
+    end
+    return false
+end
+
+function build_quadtree(qt, depth, px, py, size)
+    if need_split(depth, px, py, qt.x - size*0.5, qt.y - size*0.5, size) then
         local i, tree = CreateQuadTree(depth + 1, qt.x, qt.y, px, py)
         qt.children[i] = tree
-    end
     
-    for i = 0, 3 do
-        if qt.children[i] ~= nil then
-            qt.childre[i] = build_quadtree(
-                qt.children[i], depth + 1, px, py    
-            )
-        else
+        for i = 0, 3 do
             offset_x, offset_z = get_offset_by_index(i)
             local q = get_quad_by_index(i)
             pcx, pcy = get_origin(depth + 1, qt.x, qt.y, i)
             qt.children[i] = QuadTree(pcx, pcy, q.color)
+
+            build_quadtree(
+                qt.children[i], depth + 1, px, py, size*0.5
+            )
+            --
+            --
         end
     end
 end
@@ -234,15 +248,15 @@ end
 function draw_quadtree(qt, depth, ox, oy, size)
     if qt ~= nil then
         if #qt.children == 0 then
-            quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(size)..";"
-            draw_plane(qt.x,0,qt.y, size, qt.color)
+            --quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(size)..";"
+            draw_plane(qt.x + ox,0,qt.y + oy, size, qt.color)
         else
             for i = 0, 3 do
-                quad_tree_path=quad_tree_path.."{"
+                --quad_tree_path=quad_tree_path.."{"
                 offset_x, offset_y = get_offset_by_index(i)
                 local nox, noy = get_origin(depth + 1, ox, oy, i)
-                draw_quadtree(qt.children[i], depth + 1, nox, noy, math.pow(0.5, depth)) 
-                quad_tree_path=quad_tree_path.."}"
+                draw_quadtree(qt.children[i], depth + 1, nox, noy, plane_size*math.pow(0.5, depth)) 
+                --quad_tree_path=quad_tree_path.."}"
             end
         end
     end
@@ -264,7 +278,7 @@ function render()
     qx, qz = 0.75*px, 0.75*pz
     --qx, qz =  
     local qt = QuadTree(0, 0, lbc)
-    build_quadtree(qt, 0, qx, qz)
+    build_quadtree(qt, 0, qx, qz, plane_size)
 
     draw_quadtree(qt, 0, 0, 0, plane_size)
     -- Grid
