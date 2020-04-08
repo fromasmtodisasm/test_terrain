@@ -1,7 +1,8 @@
 mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
-max_depth = 4
+max_depth = 8
+k = 1.1
 
 local size_str=""
 local scale_str=""
@@ -77,7 +78,7 @@ function test_window()
     plane_y = gh_imgui.slider_1f("position_y", plane_y, -20, 20, 1)
     plane_z = gh_imgui.slider_1f("position_z", plane_z, -20, 20, 1)
     plane_size = gh_imgui.slider_1f("size", plane_size, 1, 40, 1)
-    plane_size = 1
+    plane_size = 20
     gh_imgui.separator()
     --set_axes_color(axes, "x", 0)
     --set_axes_color(axes, "y", 2)
@@ -195,11 +196,15 @@ function get_offset_by_index(i)
     return ox, oy
 end
 
+function get_node_size(depth, root_node_size)
+    return (root_node_size*math.pow(0.5, depth))
+end
+
 function get_origin(depth, pox, poy, n)
     local ox, oy = get_offset_by_index(n)
     local rx, ry
-    ox = plane_size*ox*math.pow(0.5, depth)*0.5
-    oy = plane_size*oy*math.pow(0.5, depth)*0.5
+    ox = 0.5*get_node_size(depth, plane_size)*ox
+    oy = 0.5*get_node_size(depth, plane_size)*oy
     rx = pox + ox
     ry = poy + oy
     return rx,ry
@@ -219,12 +224,7 @@ function need_split(depth, x, y, ox, oy, L)
             math.min(math.abs(x-ox), math.abs(x-ox-L)), 
             math.min(math.abs(y-oy), math.abs(y-oy-L))
         )
-        if d < k*L then
-            return true
-        else
-            return false
-        end
-
+        return d < k*L
         --return true
     end
     return false
@@ -232,9 +232,6 @@ end
 
 function build_quadtree(qt, depth, px, py, size)
     if need_split(depth, px, py, qt.x - size*0.5, qt.y - size*0.5, size) then
-        local i, tree = CreateQuadTree(depth + 1, qt.x, qt.y, px, py)
-        qt.children[i] = tree
-    
         for i = 0, 3 do
             offset_x, offset_z = get_offset_by_index(i)
             local q = get_quad_by_index(i)
@@ -280,7 +277,7 @@ function render()
     recursion_count = 0
     test_string=""
     quad_tree_path=""
-    qx, qz = 0.75*px, 0.75*pz
+    qx, qz = px, pz
     --qx, qz =  
     local qt = QuadTree(0, 0, lbc)
     build_quadtree(qt, 0, qx, qz, plane_size)
@@ -296,8 +293,8 @@ function render()
         gh_object.render(grid)
     end
 
-    gh_object.set_position(test_point, plane_size * qx, 0.015, plane_size * qz)
-    gh_object.set_scale(test_point, 0.01, 0.01, 0.01)
+    gh_object.set_position(test_point, qx, 0.015, qz)
+    gh_object.set_scale(test_point, 0.1, 0.1, 0.1)
     gh_gpu_program.uniform4f(simple_prog, "u_color", 1,0,0,1)
     gh_object.render(test_point)
 end
@@ -359,7 +356,7 @@ function check_keyboard()
     local right = gh_input.keyboard_is_key_down(KC_D)
 
     vx,vy,vz = gh_camera.get_view(camera)
-    local speed = 0.8
+    local speed = 0.1
     if (forward == 1) then
         --gh_camera.set_position(camera, 100, 100, 100)
         --gh_camera.set_lookat(camera, 10, 10, 10)
