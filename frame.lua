@@ -1,7 +1,7 @@
 mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
-max_depth = 8
+max_depth = 12
 k = 2.5
 
 local size_str=""
@@ -210,7 +210,8 @@ end
 function CreateQuadTree(depth, ox, oy, px, py)
     offset_x, offset_z = get_offset_by_index(i)
     local i = get_index_by_position(ox, oy, px, py)
-    local q = get_quad_by_index(i)
+    --local q = get_quad_by_index(math.ceil(depth / 4))
+    local q = get_quad_by_index(depth % 4)
     pcx, pcy = get_origin(depth, ox, oy, i)
     return QuadTree(pcx, pcy, q.color)
 end
@@ -231,7 +232,7 @@ function build_quadtree(qt, depth, px, py, size)
     if need_split(depth, px, py, qt.x - size*0.5, qt.y - size*0.5, size) then
         for i = 0, 3 do
             offset_x, offset_z = get_offset_by_index(i)
-            local q = get_quad_by_index(i)
+            local q = get_quad_by_index(depth % 4)
             pcx, pcy = get_origin(depth + 1, qt.x, qt.y, i)
             qt.children[i] = QuadTree(pcx, pcy, q.color)
 

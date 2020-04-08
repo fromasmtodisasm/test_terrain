@@ -140,7 +140,7 @@ gh_utils.grid_set_display_lines_options(grid, display_main_lines, display_lines)
 
 plane_x, plane_y, plane_z = 0,0,0
 plane_size = 1
-local subdivisions =  16
+local subdivisions =  8
 mesh_plane = gh_mesh.create_plane_v3(1,1, subdivisions,subdivisions, 0.0, 0.0, 0.0)
 
 axes = create_axes();
