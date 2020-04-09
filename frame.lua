@@ -1,8 +1,7 @@
 mx, my = 0,0
 mouse_delta = 0
 local vx, vy, vz
-max_depth = 12
-k = 2.5
+k = 2.1
 
 local size_str=""
 local scale_str=""
@@ -78,7 +77,7 @@ function test_window()
     plane_y = gh_imgui.slider_1f("position_y", plane_y, -20, 20, 1)
     plane_z = gh_imgui.slider_1f("position_z", plane_z, -20, 20, 1)
     plane_size = gh_imgui.slider_1f("size", plane_size, 1, 40, 1)
-    plane_size = 20
+    --plane_size = 20
     gh_imgui.separator()
     --set_axes_color(axes, "x", 0)
     --set_axes_color(axes, "y", 2)
@@ -211,7 +210,7 @@ function CreateQuadTree(depth, ox, oy, px, py)
     offset_x, offset_z = get_offset_by_index(i)
     local i = get_index_by_position(ox, oy, px, py)
     --local q = get_quad_by_index(math.ceil(depth / 4))
-    local q = get_quad_by_index(depth % 4)
+    local q = get_quad_by_index(i)
     pcx, pcy = get_origin(depth, ox, oy, i)
     return QuadTree(pcx, pcy, q.color)
 end
@@ -232,7 +231,7 @@ function build_quadtree(qt, depth, px, py, size)
     if need_split(depth, px, py, qt.x - size*0.5, qt.y - size*0.5, size) then
         for i = 0, 3 do
             offset_x, offset_z = get_offset_by_index(i)
-            local q = get_quad_by_index(depth % 4)
+            local q = get_quad_by_index(i)
             pcx, pcy = get_origin(depth + 1, qt.x, qt.y, i)
             qt.children[i] = QuadTree(pcx, pcy, q.color)
 
@@ -248,15 +247,15 @@ end
 function draw_quadtree(qt, depth, ox, oy, size)
     if qt ~= nil then
         if #qt.children == 0 then
-            --quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(size)..";"
-            draw_plane(qt.x + ox,0,qt.y + oy, size, qt.color)
+            quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(size)..";"
+            draw_plane(qt.x,0,qt.y, size, qt.color)
         else
             for i = 0, 3 do
-                --quad_tree_path=quad_tree_path.."{"
+                quad_tree_path=quad_tree_path.."{"
                 offset_x, offset_y = get_offset_by_index(i)
                 local nox, noy = get_origin(depth + 1, ox, oy, i)
-                draw_quadtree(qt.children[i], depth + 1, nox, noy, plane_size*math.pow(0.5, depth)) 
-                --quad_tree_path=quad_tree_path.."}"
+                draw_quadtree(qt.children[i], depth + 1, nox, noy, get_node_size(depth + 1, plane_size)) 
+                quad_tree_path=quad_tree_path.."}"
             end
         end
     end
