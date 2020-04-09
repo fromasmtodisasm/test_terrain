@@ -103,11 +103,11 @@ function test_window()
     flags = ImGuiInputTextFlags_Multiline
     gh_imgui.separator()
     px_speed = gh_imgui.slider_1f("px_speed", px_speed, 0.1, 1.0, 0.1)
-    py_speed = gh_imgui.slider_1f("py_speed", py_speed, 0.1, 1.0, 0.1)
+    pz_speed = gh_imgui.slider_1f("pz_speed", pz_speed, 0.1, 1.0, 0.1)
 
     text, state = gh_imgui.input_text("test_string", 4096, test_string, flags)
     gh_imgui.separator()
-    local px, pz = math.cos(et*px_speed), math.sin(et*py_speed)
+    local px, pz = math.cos(et*px_speed), math.sin(et*pz_speed)
     gh_imgui.text("px: "..px*plane_size.."pz: "..pz*plane_size)
     gh_imgui.separator()
     pause = gh_imgui.checkbox("pause", pause)
@@ -195,31 +195,23 @@ function get_offset_by_index(i)
     return ox, oy
 end
 
-function get_node_size(depth, root_node_size)
-    return (root_node_size*math.pow(0.5, depth))
+function get_node_size(parent_node_size)
+    return (0.5*parent_node_size)
 end
 
-function get_origin(depth, pox, poy, n)
+function get_origin(pox, poy, n, parent_node_size)
     local ox, oy = get_offset_by_index(n)
     return 
-        pox + 0.5*get_node_size(depth, plane_size)*ox, 
-        poy + 0.5*get_node_size(depth, plane_size)*oy
-end
-
-function CreateQuadTree(depth, ox, oy, px, py)
-    offset_x, offset_z = get_offset_by_index(i)
-    local i = get_index_by_position(ox, oy, px, py)
-    --local q = get_quad_by_index(math.ceil(depth / 4))
-    local q = get_quad_by_index(i)
-    pcx, pcy = get_origin(depth, ox, oy, i)
-    return QuadTree(pcx, pcy, q.color)
+        pox + 0.5*get_node_size(parent_node_size)*ox, 
+        poy + 0.5*get_node_size(parent_node_size)*oy
 end
 
 function need_split(depth, x, y, ox, oy, L)
     if depth < max_depth then
         local d = math.max(
             math.min(math.abs(x-ox), math.abs(x-ox-L)), 
-            math.min(math.abs(y-oy), math.abs(y-oy-L))
+            math.min(math.abs(y-oy), math.abs(y-oy-L)),
+            math.min(0,0)
         )
         return d < k*L
         --return true
@@ -232,7 +224,7 @@ function build_quadtree(qt, depth, px, py, size)
         for i = 0, 3 do
             offset_x, offset_z = get_offset_by_index(i)
             local q = get_quad_by_index(i)
-            pcx, pcy = get_origin(depth + 1, qt.x, qt.y, i)
+            pcx, pcy = get_origin(qt.x, qt.y, i, size)
             qt.children[i] = QuadTree(pcx, pcy, q.color)
 
             build_quadtree(
@@ -253,8 +245,8 @@ function draw_quadtree(qt, depth, ox, oy, size)
             for i = 0, 3 do
                 quad_tree_path=quad_tree_path.."{"
                 offset_x, offset_y = get_offset_by_index(i)
-                local nox, noy = get_origin(depth + 1, ox, oy, i)
-                draw_quadtree(qt.children[i], depth + 1, nox, noy, get_node_size(depth + 1, plane_size)) 
+                local nox, noy = get_origin(ox, oy, i, size)
+                draw_quadtree(qt.children[i], depth + 1, nox, noy, get_node_size(size)) 
                 quad_tree_path=quad_tree_path.."}"
             end
         end
@@ -270,7 +262,7 @@ function render()
     if pause ~= 1 then
         et = gh_utils.get_elapsed_time()
     end
-    local px, pz = math.cos(et*px_speed), math.sin(et*py_speed)
+    local px, pz = math.cos(et*px_speed), math.sin(et*pz_speed)
     recursion_count = 0
     test_string=""
     quad_tree_path=""

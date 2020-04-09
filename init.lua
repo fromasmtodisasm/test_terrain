@@ -186,7 +186,7 @@ quad_tree_path = ""
 test_string = ""
 
 px_speed = 1
-py_speed = 1
+pz_speed = 1
 pause = 0
 et = gh_utils.get_elapsed_time()
 
