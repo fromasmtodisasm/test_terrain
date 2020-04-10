@@ -20,13 +20,22 @@ if (winH > 0) then
   aspect = winW / winH
 end  
 
-world_position = {x = 1, y=30, z=3}
+world_position = {x = 10, y=10, z=3}
+fov = 60
+lx = 0
+ly = 0
+lz = 0
 camera = gh_camera.create_persp(60, aspect, 1.0, 100.0)
 gh_camera.set_viewport(camera, 0, 0, winW, winH)
 gh_camera.set_position(camera, world_position.x, world_position.y, world_position.z)
-gh_camera.set_lookat(camera, 0, 0, 0, 1)
+gh_camera.set_lookat(camera, lx, ly, lz, 1)
 gh_camera.setupvec(camera, 0, 1, 0, 0)
 
+gmx = 0.5*winW
+gmy = 0.5*winH
+yaw = 0
+pitch = 0
+gh_input.mouse_set_position(gmx, gmy)
 
 draw_mode = 0
 draw_grid = 0

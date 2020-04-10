@@ -7,6 +7,19 @@ local size_str=""
 local scale_str=""
 local origin_str=""
 
+local FACE_POS_X = 0
+local FACE_POS_Y = 1
+local FACE_NEG_X = 2   
+local FACE_NEG_Y = 3
+local FACE_POS_Z = 4
+local FACE_NEG_Z = 5
+
+dmx = 0
+dmy = 0
+
+
+
+
 function Bounds(x1,y1, x2,y2)
     local result = {}
     result.lt = {x = x1, y = y1}
@@ -114,6 +127,10 @@ function test_window()
     gh_imgui.text("size: "..size_str)
     gh_imgui.text("scale: "..scale_str)
     gh_imgui.text("origin: "..origin_str)
+    gh_imgui.separator()
+    gh_imgui.text("camera")
+    gh_imgui.slider_1i()
+    fov = gh_imgui.slider_1i("fov", fov, 30, 120)
     
 
     gh_imgui.window_end()
@@ -129,8 +146,10 @@ function wireframe(enable)
     end
 end
 
-function draw_plane(x, y, z, size, color) 
-    gh_object.set_vertices_color(mesh_id, color.r, color.g, color.b, color.a)
+function draw_plane(x, y, z, rx,ry,rz, size, color, face) 
+    gh_object.set_transform_order(mesh_plane, 1)
+    gh_object.set_vertices_color(mesh_plane, color.r, color.g, color.b, color.a)
+    gh_object.set_euler_angles(mesh_plane, rx,ry,rz)
     gh_object.set_position(mesh_plane, x, y, z)
     gh_object.set_scale(mesh_plane, size, size, size)
     gh_gpu_program.bind(simple_prog)
@@ -219,10 +238,83 @@ function need_split(depth, x, y, ox, oy, L)
     return false
 end
 
+function rotate_for_face(face)
+    local rx=0
+    local ry=0 
+    local rz=0
+    if face == FACE_POS_X then
+        rx = 0
+        ry = 0
+        rz = 90
+    elseif face == FACE_POS_Y then
+        rx = 0
+        ry = 0
+        rz = 0
+
+    elseif face == FACE_NEG_X then
+        rx = 0
+        ry = 0
+        rz = -90
+
+    elseif face == FACE_NEG_Y then
+        rx = 0
+        ry = 0
+        rz = 180
+
+    elseif face == FACE_POS_Z then
+        rx = 90 
+        ry = 0
+        rz = 0
+
+    elseif face == FACE_NEG_Z then
+        rx = -90 
+        ry = 0
+        rz = 0
+    end
+    return rx,ry,rz
+
+end
+
+function offset_for_face(face, x,y,z, radius)
+    local rx=0
+    local ry=0 
+    local rz=0
+    if face == FACE_POS_X then
+        rx = radius
+        ry = 0
+        rz = 0
+    elseif face == FACE_POS_Y then
+        rx = 0
+        ry = radius
+        rz = 0
+
+    elseif face == FACE_NEG_X then
+        rx = -radius
+        ry = 0
+        rz = 0
+
+    elseif face == FACE_NEG_Y then
+        rx = 0
+        ry = -radius
+        rz = 0
+
+    elseif face == FACE_POS_Z then
+        rx = 0
+        ry = 0
+        rz = radius
+
+    elseif face == FACE_NEG_Z then
+        rx = 0 
+        ry = 0
+        rz = radius
+    end
+    return x+rx,y+ry,z+rz
+
+end
+
 function build_quadtree(qt, depth, px, py, size)
     if need_split(depth, px, py, qt.x - size*0.5, qt.y - size*0.5, size) then
         for i = 0, 3 do
-            offset_x, offset_z = get_offset_by_index(i)
             local q = get_quad_by_index(i)
             pcx, pcy = get_origin(qt.x, qt.y, i, size)
             qt.children[i] = QuadTree(pcx, pcy, q.color)
@@ -236,18 +328,17 @@ function build_quadtree(qt, depth, px, py, size)
     end
 end
 
-function draw_quadtree(qt, depth, ox, oy, size)
+function draw_quadtree(qt, ox, oy, size, face)
     if qt ~= nil then
         if #qt.children == 0 then
-            quad_tree_path=quad_tree_path..tostring(depth)..","..tostring(ox)..","..tostring(oy)..","..tostring(size)..";"
-            draw_plane(qt.x,0,qt.y, size, qt.color)
+            local rx, ry, rz = rotate_for_face(face)
+            local ox, oy, oz = offset_for_face(face, qt.x, 0, qt.y, 0.5*plane_size)
+            draw_plane(ox, oy, oz, rx, ry, rz, size, qt.color, face)
         else
             for i = 0, 3 do
-                quad_tree_path=quad_tree_path.."{"
                 offset_x, offset_y = get_offset_by_index(i)
                 local nox, noy = get_origin(ox, oy, i, size)
-                draw_quadtree(qt.children[i], depth + 1, nox, noy, get_node_size(size)) 
-                quad_tree_path=quad_tree_path.."}"
+                draw_quadtree(qt.children[i], nox, noy, get_node_size(size), face) 
             end
         end
     end
@@ -271,7 +362,9 @@ function render()
     local qt = QuadTree(0, 0, lbc)
     build_quadtree(qt, 0, qx, qz, plane_size)
 
-    draw_quadtree(qt, 0, 0, 0, plane_size)
+    for i = 1, 1 do
+        draw_quadtree(qt, 0, 0, plane_size, i)
+    end
     -- Grid
     --
     gh_object.set_scale(axes, 20, 20, 10)
@@ -288,6 +381,30 @@ function render()
     gh_object.render(test_point)
 end
 
+function update_camera()
+    local LEFT_BUTTON = 1
+    local RIGHT_BUTTON = 2
+
+    local is_down = gh_input.mouse_get_button_state(LEFT_BUTTON)
+
+    local new_mx, new_my = gh_input.mouse_get_position()
+    dmx = -(new_mx - gmx)
+    dmy = -(new_my - gmy)
+    gmx = new_mx
+    gmy = new_my
+    if is_down == 1 then
+        yaw = yaw + dmx
+        pitch = pitch + dmy
+        cam_sense = 0.1
+    end
+    gh_camera.set_yaw(camera, yaw)
+    gh_camera.set_pitch(camera, pitch)
+    fov = fov + gh_input.mouse_get_wheel_delta() / 12
+
+    gh_camera.set_fov(camera, fov)
+
+end
+
 function begin_frame()
     local elapsed_time = camera_xz_rotation--gh_utils.get_elapsed_time()
 
@@ -298,8 +415,10 @@ function begin_frame()
     local y = 30
     local z = 40 * math.sin(camera_xz_rotation)
     --gh_camera.set_position(camera, x, y, z)
-    gh_camera.set_lookat(camera, 0, 0, 0, 1)
+    gh_camera.set_lookat(camera, lx, ly, lz, 1)
 
+    
+    update_camera()
     gh_camera.bind(camera)
 
 
@@ -351,14 +470,19 @@ function check_keyboard()
         --gh_camera.set_lookat(camera, 10, 10, 10)
         
         local px, py, pz = gh_camera.get_position(camera)
-        nx,ny,nz = speed * gh_utils.math_normalize_vec3(gh_camera.get_view(camera))
-        nx = nx + px
+        nx,ny,nz = gh_utils.math_normalize_vec3(gh_camera.get_view(camera))
+        gh_camera.set_lookat(camera, lx, ly, lz + nz)
+        nx = px
         ny = py
-        nz = nz + pz
+        nz = speed*nz + pz
         gh_camera.set_position(camera,  nx,ny,nz)
     end
     if (backward == 1) then
-        --gh_camera.set_position(camera, 100, 100, 100)
+        nx,ny,nz = gh_utils.math_normalize_vec3(gh_camera.get_view(camera))
+        nx = px
+        ny = py
+        nz = -speed*nz + pz
+        gh_camera.set_position(camera,  nx,ny,nz)
     end
     if (left == 1) then
         --gh_camera.set_position(camera, 100, 100, 100)
@@ -379,4 +503,3 @@ function check_input()
 end
 
 frame()
-
