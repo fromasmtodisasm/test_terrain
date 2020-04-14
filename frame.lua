@@ -280,33 +280,33 @@ function offset_for_face(face, x,y,z, radius)
     local ry=0 
     local rz=0
     if face == FACE_POS_X then
-        rx = radius
+        rx = 2*radius
         ry = 0
         rz = 0
     elseif face == FACE_POS_Y then
         rx = 0
-        ry = radius
+        ry = 2*radius
         rz = 0
 
     elseif face == FACE_NEG_X then
-        rx = -radius
+        rx = -2*radius
         ry = 0
         rz = 0
 
     elseif face == FACE_NEG_Y then
         rx = 0
-        ry = -radius
+        ry = -2*radius
         rz = 0
 
     elseif face == FACE_POS_Z then
         rx = 0
         ry = 0
-        rz = radius
+        rz = 2*radius
 
     elseif face == FACE_NEG_Z then
         rx = 0 
         ry = 0
-        rz = radius
+        rz = -2*radius
     end
     return x+rx,y+ry,z+rz
 
@@ -362,7 +362,7 @@ function render()
     local qt = QuadTree(0, 0, lbc)
     build_quadtree(qt, 0, qx, qz, plane_size)
 
-    for i = 1, 1 do
+    for i = 0, 5 do
         draw_quadtree(qt, 0, 0, plane_size, i)
     end
     -- Grid
